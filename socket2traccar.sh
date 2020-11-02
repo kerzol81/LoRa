@@ -1,14 +1,23 @@
 #!/bin/bash
 # 02.11.2020 KerZol
+# testing script
 
-. config
+set -x
+
+if [ -e config ]
+then
+	. config
+else
+	echo "[-] missing config file"
+	exit 1
+fi
 
 echo "[*] Daemon started $(date +"%F %T")"
 
 while true;
 do
 
-REPLY=$(websocat -1 -E "$host")
+REPLY=$(websocat -1 -E "$HOST")
 
 PORT=$(echo "$REPLY" | awk -F "," '{print $6}' | awk -F ":" '{print $2}')
 DATA=$(echo "$REPLY" | awk -F "," '{print $15}' | awk -F ":" '{print $2}' | awk -F "\"" '{print $2}')
