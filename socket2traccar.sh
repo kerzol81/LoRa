@@ -8,7 +8,7 @@ if [ -e config ]
 then
 	. config
 else
-	echo "[-] missing config file"
+	echo "[-] Config file is missing"
 	exit 1
 fi
 
@@ -20,7 +20,7 @@ do
 REPLY=$(websocat -1 -E "$HOST")
 
 PORT=$(echo "$REPLY" | awk -F "," '{print $6}' | awk -F ":" '{print $2}')
-DATA=$(echo "$REPLY" | awk -F "," '{print $15}' | awk -F ":" '{print $2}' | awk -F "\"" '{print $2}')
+DATA=$(echo $REPLY | awk -F "data" '{print $2}' | sed 's/\"//g' | sed 's/://g' | sed 's/}//g')
 ID=$(echo $REPLY | awk -F "," '{print $3}' | awk -F ":" '{print $2}' | sed 's/"//g' | tail -c 7)
 
 case "$PORT" in
@@ -35,10 +35,19 @@ case "$PORT" in
 
 	204)
     echo '[*] GPS coordinates message'
+    
     LATITUDE_DECIMAL=$(echo $((16#$(echo "$DATA" | awk '{print substr($1,1,6)}'))))
     LATITUDE=$(awk "BEGIN {print ($LATITUDE_DECIMAL/8388606)*90}")
+    if awk 'BEGIN {exit !('$LATITUDE' >= '90')}'; then
+		LATITUDE=$(awk "BEGIN {print ($LATITUDE-180)}")
+	fi  
+    
     LONGITUDE_DECIMAL=$(echo $((16#$(echo "$DATA" | awk '{print substr($1,7,6)}'))))
     LONGITUDE=$(awk "BEGIN {print ($LONGITUDE_DECIMAL/8388606)*180}")
+    if awk 'BEGIN {exit !('$LONGITUDE' >= '180')}'; then
+		LONGITUDE=$(awk "BEGIN {print ($LONGITUDE-360)}")
+	fi
+	  
     ALTITUDE=$(echo $((16#$(echo "$DATA" | awk '{print substr($1,13,4)}'))))
     ;;
 
